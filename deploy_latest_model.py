@@ -80,6 +80,14 @@ with open(os.path.join(code_dir, "inference.py"), "w") as f:
     f.write("""import joblib
 import os
 import numpy as np
+import xgboost as xgb
+
+
+FEATURE_NAMES = [
+    "Wine", "Alcohol", "Malic.acid", "Ash", "Acl", "Mg",
+    "Phenols", "Flavanoids", "Nonflavanoid.phenols", "Proanth",
+    "Color.int", "Hue", "OD"
+]
 
 
 def model_fn(model_dir):
@@ -100,9 +108,8 @@ def input_fn(request_body, content_type):
 
 
 def predict_fn(input_data, model):
-    prediction = model.get_booster().predict(
-        __import__('xgboost').DMatrix(input_data)
-    )
+    dmatrix = xgb.DMatrix(input_data, feature_names=FEATURE_NAMES)
+    prediction = model.get_booster().predict(dmatrix)
     return prediction
 
 
