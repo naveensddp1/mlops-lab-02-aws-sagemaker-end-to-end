@@ -1,55 +1,61 @@
 # scripts/create_pipeline.py
 
+import os
 import boto3
 import sagemaker
-import os
-from sagemaker.estimator import Estimator
+
+from sagemaker.sklearn.estimator import SKLearn
+from sagemaker.inputs import TrainingInput
 from sagemaker.workflow.pipeline import Pipeline
 from sagemaker.workflow.steps import TrainingStep
 
-region = os.environ["AWS_REGION"]
-role = os.environ["SAGEMAKER_ROLE_ARN"]
-bucket = os.environ["S3_BUCKET"]
-mlflow_uri = os.environ["MLFLOW_TRACKING_URI"]
+REGION = os.environ["AWS_REGION"]
+ROLE_ARN = os.environ["SAGEMAKER_ROLE_ARN"]
+BUCKET = os.environ["S3_BUCKET"]
+MLFLOW_URI = os.environ["MLFLOW_TRACKING_URI"].rstrip("/")
 
-session = sagemaker.Session()
+PIPELINE_NAME = "wine-mlflow-pipeline"
 
-estimator = Estimator(
-    image_uri=sagemaker.image_uris.retrieve(
-        "xgboost",
-        region,
-        version="1.7-1"
-    ),
-    role=role,
-    instance_count=1,
+sess = sagemaker.Session(boto3.Session(region_name=REGION))
+
+# Your dataset is here:
+# s3://<bucket>/data/wine.csv
+train_s3_uri = f"s3://{BUCKET}/data/wine.csv"
+
+estimator = SKLearn(
+    entry_point="train_with_mlflow.py",
+    source_dir="scripts",
+    role=ROLE_ARN,
     instance_type="ml.m5.large",
-    output_path=f"s3://{bucket}/models/",
+    instance_count=1,
+    framework_version="1.2-1",  # stable sklearn container
+    py_version="py3",
+    sagemaker_session=sess,
+    dependencies=["scripts/requirements-sagemaker.txt"],
     environment={
-        "MLFLOW_TRACKING_URI": mlflow_uri
-    }
-)
-
-estimator.set_hyperparameters()
-
-train_input = sagemaker.inputs.TrainingInput(
-    f"s3://{bucket}/data/",
-    content_type="text/csv"
+        "MLFLOW_TRACKING_URI": MLFLOW_URI
+    },
+    output_path=f"s3://{BUCKET}/models/"
 )
 
 step_train = TrainingStep(
     name="TrainWineModel",
     estimator=estimator,
-    inputs={"train": train_input}
+    inputs={
+        "train": TrainingInput(
+            s3_data=train_s3_uri,
+            content_type="text/csv"
+        )
+    }
 )
 
 pipeline = Pipeline(
-    name="wine-mlflow-pipeline",
+    name=PIPELINE_NAME,
     steps=[step_train],
-    sagemaker_session=session
+    sagemaker_session=sess
 )
 
-pipeline.upsert(role_arn=role)
+pipeline.upsert(role_arn=ROLE_ARN)
 
 execution = pipeline.start()
-
 print("Pipeline started:", execution.arn)
