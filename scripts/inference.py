@@ -21,7 +21,9 @@ def input_fn(request_body, content_type):
 
 def predict_fn(input_data, model):
 
-    return model.predict(input_data)
+    prediction = model.predict(input_data)
+
+    return prediction
 
 
 def output_fn(prediction, content_type):
