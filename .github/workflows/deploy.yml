@@ -25,7 +25,8 @@ jobs:
     - name: Install dependencies
       run: |
         pip install --upgrade pip
-        pip install boto3 sagemaker scikit-learn joblib
+        pip install boto3 sagemaker==2.224.0 scikit-learn joblib
+        # pip install boto3 sagemaker scikit-learn joblib
 
     - name: Deploy endpoint
       env:
