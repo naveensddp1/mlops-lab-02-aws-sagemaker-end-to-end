@@ -6,6 +6,7 @@ import joblib
 import pandas as pd
 import xgboost as xgb
 
+
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, r2_score
 
@@ -97,3 +98,9 @@ else:
     os.makedirs(MODEL_DIR, exist_ok=True)
     joblib.dump(model, os.path.join(MODEL_DIR, "model.joblib"))
     print("[OK] Trained model saved (MLflow disabled)")
+import joblib
+import os
+
+model_path = os.path.join(os.environ["SM_MODEL_DIR"], "model.joblib")
+
+joblib.dump(model, model_path)

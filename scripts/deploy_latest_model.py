@@ -4,12 +4,15 @@ import boto3
 import os
 import time
 
+import sagemaker
+from sagemaker.sklearn.model import SKLearnModel
+
 region = os.environ["AWS_REGION"]
 role = os.environ["SAGEMAKER_ROLE_ARN"]
 
-sm = boto3.client("sagemaker", region_name=region)
-
 endpoint_name = "wine-quality-endpoint"
+
+sm = boto3.client("sagemaker", region_name=region)
 
 print("Finding latest training job...")
 
@@ -39,66 +42,32 @@ model_artifact = job_details["ModelArtifacts"]["S3ModelArtifacts"]
 
 print("Model artifact:", model_artifact)
 
-model_name = f"wine-model-{int(time.time())}"
+# SageMaker session
+session = sagemaker.Session()
 
-container = {
-    "Image": "720646828776.dkr.ecr.ap-south-1.amazonaws.com/sagemaker-scikit-learn:1.2-1-cpu-py3",
-    "ModelDataUrl": model_artifact,
-}
-
-print("Creating model...")
-
-sm.create_model(
-    ModelName=model_name,
-    ExecutionRoleArn=role,
-    PrimaryContainer=container
+# THIS IS THE CRITICAL FIX
+model = SKLearnModel(
+    model_data=model_artifact,
+    role=role,
+    entry_point="scripts/inference.py",   # VERY IMPORTANT
+    framework_version="1.2-1",
+    py_version="py3",
+    sagemaker_session=session
 )
 
-endpoint_config = f"{model_name}-config"
-
-print("Creating endpoint config...")
-
-sm.create_endpoint_config(
-    EndpointConfigName=endpoint_config,
-    ProductionVariants=[
-        {
-            "VariantName": "AllTraffic",
-            "ModelName": model_name,
-            "InstanceType": "ml.m5.large",
-            "InitialInstanceCount": 1
-        }
-    ]
-)
-
-print("Deploying endpoint...")
+print("Deleting old endpoint if exists...")
 
 try:
-    sm.delete_endpoint(EndpointName=endpoint_name)
-    time.sleep(10)
+    model.sagemaker_session.delete_endpoint(endpoint_name)
 except:
     pass
 
-sm.create_endpoint(
-    EndpointName=endpoint_name,
-    EndpointConfigName=endpoint_config
+print("Deploying endpoint...")
+
+predictor = model.deploy(
+    endpoint_name=endpoint_name,
+    instance_type="ml.m5.large",
+    initial_instance_count=1
 )
 
-print("Waiting for endpoint...")
-
-while True:
-
-    status = sm.describe_endpoint(
-        EndpointName=endpoint_name
-    )["EndpointStatus"]
-
-    print("Status:", status)
-
-    if status == "InService":
-        break
-
-    if status == "Failed":
-        raise Exception("Endpoint deployment failed")
-
-    time.sleep(30)
-
-print("SUCCESS — endpoint ready:", endpoint_name)
+print("SUCCESS — endpoint deployed:", endpoint_name)
