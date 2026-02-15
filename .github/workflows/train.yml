@@ -8,6 +8,7 @@ permissions:
   contents: read
 
 jobs:
+
   train:
 
     runs-on: ubuntu-latest
@@ -21,9 +22,18 @@ jobs:
         role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
         aws-region: ${{ secrets.AWS_REGION }}
 
-    - run: pip install boto3 sagemaker mlflow pandas scikit-learn xgboost
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install boto3
+        pip install sagemaker==2.224.0
+        pip install mlflow
+        pip install pandas
+        pip install scikit-learn
+        pip install xgboost
 
-    - run: python scripts/create_pipeline.py
+    - name: Run pipeline
+      run: python scripts/create_pipeline.py
       env:
         AWS_REGION: ${{ secrets.AWS_REGION }}
         S3_BUCKET: ${{ secrets.S3_BUCKET }}
