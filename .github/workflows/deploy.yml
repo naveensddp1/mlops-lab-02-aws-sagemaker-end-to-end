@@ -33,4 +33,4 @@ jobs:
         AWS_REGION: ap-south-1
         SAGEMAKER_ROLE_ARN: ${{ secrets.SAGEMAKER_ROLE_ARN }}
       run: |
-        python scripts/deploy_latest_model.py
+        python deploy_latest_model.py
