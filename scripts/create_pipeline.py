@@ -18,8 +18,6 @@ PIPELINE_NAME = "wine-mlflow-pipeline"
 
 sess = sagemaker.Session(boto3.Session(region_name=REGION))
 
-# Your dataset is here:
-# s3://<bucket>/data/wine.csv
 train_s3_uri = f"s3://{BUCKET}/data/wine.csv"
 
 estimator = SKLearn(
@@ -28,25 +26,17 @@ estimator = SKLearn(
     role=ROLE_ARN,
     instance_type="ml.m5.large",
     instance_count=1,
-    framework_version="1.2-1",  # stable sklearn container
+    framework_version="1.2-1",
     py_version="py3",
     sagemaker_session=sess,
-    dependencies=["scripts/requirements-sagemaker.txt"],
-    environment={
-        "MLFLOW_TRACKING_URI": MLFLOW_URI
-    },
+    environment={"MLFLOW_TRACKING_URI": MLFLOW_URI},
     output_path=f"s3://{BUCKET}/models/"
 )
 
 step_train = TrainingStep(
     name="TrainWineModel",
     estimator=estimator,
-    inputs={
-        "train": TrainingInput(
-            s3_data=train_s3_uri,
-            content_type="text/csv"
-        )
-    }
+    inputs={"train": TrainingInput(s3_data=train_s3_uri, content_type="text/csv")}
 )
 
 pipeline = Pipeline(
@@ -56,6 +46,5 @@ pipeline = Pipeline(
 )
 
 pipeline.upsert(role_arn=ROLE_ARN)
-
 execution = pipeline.start()
 print("Pipeline started:", execution.arn)
