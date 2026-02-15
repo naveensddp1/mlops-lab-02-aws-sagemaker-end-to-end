@@ -80,14 +80,6 @@ with open(os.path.join(code_dir, "inference.py"), "w") as f:
     f.write("""import joblib
 import os
 import numpy as np
-import pandas as pd
-
-
-FEATURE_NAMES = [
-    "fixed acidity", "volatile acidity", "citric acid", "residual sugar",
-    "chlorides", "free sulfur dioxide", "total sulfur dioxide", "density",
-    "pH", "sulphates", "alcohol"
-]
 
 
 def model_fn(model_dir):
@@ -103,12 +95,15 @@ def input_fn(request_body, content_type):
         for line in lines:
             row = [float(x.strip()) for x in line.split(",")]
             parsed.append(row)
-        return pd.DataFrame(parsed, columns=FEATURE_NAMES)
+        return np.array(parsed)
     raise ValueError(f"Unsupported content type: {content_type}")
 
 
 def predict_fn(input_data, model):
-    return model.predict(input_data)
+    prediction = model.get_booster().predict(
+        __import__('xgboost').DMatrix(input_data)
+    )
+    return prediction
 
 
 def output_fn(prediction, accept):
@@ -117,7 +112,7 @@ def output_fn(prediction, accept):
 
 # Write MINIMAL requirements.txt - ONLY xgboost
 with open(os.path.join(code_dir, "requirements.txt"), "w") as f:
-    f.write("xgboost==2.0.3\npandas\n")
+    f.write("xgboost==2.0.3\n")
 
 print(f"  code/ contents: {os.listdir(code_dir)}")
 
