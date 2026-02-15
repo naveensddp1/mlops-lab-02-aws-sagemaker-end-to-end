@@ -2,8 +2,6 @@
 
 import boto3
 import os
-import time
-
 import sagemaker
 from sagemaker.sklearn.model import SKLearnModel
 
@@ -42,23 +40,22 @@ model_artifact = job_details["ModelArtifacts"]["S3ModelArtifacts"]
 
 print("Model artifact:", model_artifact)
 
-# SageMaker session
 session = sagemaker.Session()
 
-# THIS IS THE CRITICAL FIX
 model = SKLearnModel(
     model_data=model_artifact,
     role=role,
-    entry_point="scripts/inference.py",   # VERY IMPORTANT
+    entry_point="inference.py",
+    source_dir="scripts",   # VERY IMPORTANT FIX
     framework_version="1.2-1",
     py_version="py3",
     sagemaker_session=session
 )
 
-print("Deleting old endpoint if exists...")
+print("Deleting old endpoint...")
 
 try:
-    model.sagemaker_session.delete_endpoint(endpoint_name)
+    session.delete_endpoint(endpoint_name)
 except:
     pass
 
@@ -70,4 +67,4 @@ predictor = model.deploy(
     initial_instance_count=1
 )
 
-print("SUCCESS — endpoint deployed:", endpoint_name)
+print("SUCCESS endpoint deployed:", endpoint_name)
