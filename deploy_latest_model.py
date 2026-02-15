@@ -124,18 +124,20 @@ shutil.rmtree(tmpdir)
 print("Cleaning up any existing endpoint resources...")
 
 try:
+    sm.describe_endpoint(EndpointName=endpoint_name)
+    # Endpoint exists — delete it
     sm.delete_endpoint(EndpointName=endpoint_name)
-    print("  Deleted endpoint")
+    print("  Deleting endpoint...")
     waiter = sm.get_waiter("endpoint_deleted")
     waiter.wait(EndpointName=endpoint_name, WaiterConfig={"Delay": 10, "MaxAttempts": 60})
     print("  Endpoint deletion confirmed")
-except sm.exceptions.ClientError:
+except Exception:
     print("  No existing endpoint")
 
 try:
     sm.delete_endpoint_config(EndpointConfigName=endpoint_name)
     print("  Deleted endpoint config")
-except sm.exceptions.ClientError:
+except Exception:
     print("  No existing endpoint config")
 
 try:
@@ -148,6 +150,9 @@ except Exception:
     pass
 
 # ── Deploy — NO source_dir needed, code is inside model.tar.gz ──
+import time
+print("Waiting 30s for cleanup to propagate...")
+time.sleep(30)
 print("Deploying new endpoint...")
 
 model = SKLearnModel(
