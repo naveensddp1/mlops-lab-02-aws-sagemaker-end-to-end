@@ -80,6 +80,14 @@ with open(os.path.join(code_dir, "inference.py"), "w") as f:
     f.write("""import joblib
 import os
 import numpy as np
+import pandas as pd
+
+
+FEATURE_NAMES = [
+    "fixed acidity", "volatile acidity", "citric acid", "residual sugar",
+    "chlorides", "free sulfur dioxide", "total sulfur dioxide", "density",
+    "pH", "sulphates", "alcohol"
+]
 
 
 def model_fn(model_dir):
@@ -95,7 +103,7 @@ def input_fn(request_body, content_type):
         for line in lines:
             row = [float(x.strip()) for x in line.split(",")]
             parsed.append(row)
-        return np.array(parsed)
+        return pd.DataFrame(parsed, columns=FEATURE_NAMES)
     raise ValueError(f"Unsupported content type: {content_type}")
 
 
@@ -109,7 +117,7 @@ def output_fn(prediction, accept):
 
 # Write MINIMAL requirements.txt - ONLY xgboost
 with open(os.path.join(code_dir, "requirements.txt"), "w") as f:
-    f.write("xgboost==2.0.3\n")
+    f.write("xgboost==2.0.3\npandas\n")
 
 print(f"  code/ contents: {os.listdir(code_dir)}")
 
@@ -132,28 +140,36 @@ shutil.rmtree(tmpdir)
 print("\n[3/5] Cleaning up existing resources...")
 
 # Delete endpoint (wait if in-progress)
-for attempt in range(5):
-    try:
-        ep = sm.describe_endpoint(EndpointName=endpoint_name)
-        status = ep["EndpointStatus"]
-        print(f"  Endpoint status: {status}")
-        if status in ("Creating", "Updating", "RollingBack"):
-            print(f"  Waiting for in-progress operation ({status})...")
-            time.sleep(60)
-            continue
+try:
+    ep = sm.describe_endpoint(EndpointName=endpoint_name)
+    status = ep["EndpointStatus"]
+    print(f"  Endpoint status: {status}")
+
+    # Wait for any in-progress state to finish
+    while status in ("Creating", "Updating", "RollingBack", "Deleting"):
+        print(f"  Endpoint is {status}, waiting 30s...")
+        time.sleep(30)
+        try:
+            status = sm.describe_endpoint(EndpointName=endpoint_name)["EndpointStatus"]
+        except sm.exceptions.ClientError:
+            print("  Endpoint gone")
+            status = "Gone"
+            break
+
+    if status != "Gone":
+        # Now it's InService or Failed — safe to delete
         sm.delete_endpoint(EndpointName=endpoint_name)
         print("  Delete requested, waiting for removal...")
-        for _ in range(60):
+        while True:
             try:
+                time.sleep(15)
                 sm.describe_endpoint(EndpointName=endpoint_name)
-                time.sleep(10)
             except sm.exceptions.ClientError:
+                print("  Endpoint deleted")
                 break
-        print("  Endpoint deleted")
-        break
-    except sm.exceptions.ClientError:
-        print("  No existing endpoint")
-        break
+
+except sm.exceptions.ClientError:
+    print("  No existing endpoint")
 
 # Delete endpoint configs
 try:
