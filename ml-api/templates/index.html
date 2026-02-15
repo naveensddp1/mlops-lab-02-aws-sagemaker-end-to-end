@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Wine Quality Predictor</title>
+<style>
+body {
+    font-family: Arial;
+    background: #0f172a;
+    color: white;
+    text-align: center;
+}
+input {
+    margin: 5px;
+    padding: 10px;
+}
+button {
+    padding: 10px;
+    background: green;
+    color: white;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Wine Quality Prediction</h1>
+
+<form id="form">
+
+<input name="fixed_acidity" placeholder="fixed acidity"><br>
+<input name="volatile_acidity" placeholder="volatile acidity"><br>
+<input name="citric_acid" placeholder="citric acid"><br>
+<input name="residual_sugar" placeholder="residual sugar"><br>
+<input name="chlorides" placeholder="chlorides"><br>
+<input name="free_sulfur_dioxide" placeholder="free sulfur dioxide"><br>
+<input name="total_sulfur_dioxide" placeholder="total sulfur dioxide"><br>
+<input name="density" placeholder="density"><br>
+<input name="pH" placeholder="pH"><br>
+<input name="sulphates" placeholder="sulphates"><br>
+<input name="alcohol" placeholder="alcohol"><br>
+
+<button type="submit">Predict</button>
+
+</form>
+
+<h2 id="result"></h2>
+
+<script>
+
+document.getElementById("form").onsubmit = async (e) => {
+
+    e.preventDefault()
+
+    const formData = new FormData(e.target)
+
+    const response = await fetch("/predict", {
+
+        method: "POST",
+        body: formData
+
+    })
+
+    const data = await response.json()
+
+    document.getElementById("result").innerHTML =
+        "Prediction: " + data.prediction
+}
+
+</script>
+
+</body>
+</html>

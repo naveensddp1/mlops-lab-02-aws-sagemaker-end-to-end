@@ -1,0 +1,60 @@
+import boto3
+import json
+from fastapi import FastAPI, Request, Form
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+
+# SageMaker endpoint name
+ENDPOINT_NAME = "wine-quality-endpoint"
+REGION = "ap-south-1"
+
+# SageMaker runtime client
+runtime = boto3.client(
+    "sagemaker-runtime",
+    region_name=REGION
+)
+
+app = FastAPI()
+
+templates = Jinja2Templates(directory="templates")
+
+
+# Home page
+@app.get("/", response_class=HTMLResponse)
+def home(request: Request):
+    return templates.TemplateResponse(
+        "index.html",
+        {"request": request}
+    )
+
+
+# Prediction API
+@app.post("/predict")
+def predict(
+    fixed_acidity: float = Form(...),
+    volatile_acidity: float = Form(...),
+    citric_acid: float = Form(...),
+    residual_sugar: float = Form(...),
+    chlorides: float = Form(...),
+    free_sulfur_dioxide: float = Form(...),
+    total_sulfur_dioxide: float = Form(...),
+    density: float = Form(...),
+    pH: float = Form(...),
+    sulphates: float = Form(...),
+    alcohol: float = Form(...)
+):
+
+    # convert to CSV format
+    payload = f"{fixed_acidity},{volatile_acidity},{citric_acid},{residual_sugar},{chlorides},{free_sulfur_dioxide},{total_sulfur_dioxide},{density},{pH},{sulphates},{alcohol}"
+
+    response = runtime.invoke_endpoint(
+        EndpointName=ENDPOINT_NAME,
+        ContentType="text/csv",
+        Body=payload
+    )
+
+    result = response["Body"].read().decode()
+
+    return {
+        "prediction": result
+    }
