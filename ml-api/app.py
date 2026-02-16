@@ -44,8 +44,10 @@ def predict(
     alcohol: float = Form(...)
 ):
 
-    # convert to CSV format
-    payload = f"{fixed_acidity},{volatile_acidity},{citric_acid},{residual_sugar},{chlorides},{free_sulfur_dioxide},{total_sulfur_dioxide},{density},{pH},{sulphates},{alcohol}"
+    # convert to CSV format with headers
+    headers = "fixed_acidity,volatile_acidity,citric_acid,residual_sugar,chlorides,free_sulfur_dioxide,total_sulfur_dioxide,density,pH,sulphates,alcohol"
+    data = f"{fixed_acidity},{volatile_acidity},{citric_acid},{residual_sugar},{chlorides},{free_sulfur_dioxide},{total_sulfur_dioxide},{density},{pH},{sulphates},{alcohol}"
+    payload = f"{headers}\n{data}"
 
     try:
         response = runtime.invoke_endpoint(
