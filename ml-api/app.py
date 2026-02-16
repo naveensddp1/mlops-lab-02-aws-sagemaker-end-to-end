@@ -47,14 +47,30 @@ def predict(
     # convert to CSV format
     payload = f"{fixed_acidity},{volatile_acidity},{citric_acid},{residual_sugar},{chlorides},{free_sulfur_dioxide},{total_sulfur_dioxide},{density},{pH},{sulphates},{alcohol}"
 
-    response = runtime.invoke_endpoint(
-        EndpointName=ENDPOINT_NAME,
-        ContentType="text/csv",
-        Body=payload
-    )
+    try:
+        response = runtime.invoke_endpoint(
+            EndpointName=ENDPOINT_NAME,
+            ContentType="text/csv",
+            Body=payload
+        )
 
-    result = response["Body"].read().decode()
+        result = response["Body"].read().decode()
+        
+        # Parse the JSON response from SageMaker
+        prediction_response = json.loads(result)
+        
+        # Extract prediction value from the response
+        if isinstance(prediction_response, dict) and "predictions" in prediction_response:
+            prediction_value = prediction_response["predictions"][0]["score"]
+        elif isinstance(prediction_response, list):
+            prediction_value = prediction_response[0]["score"]
+        else:
+            prediction_value = result
 
-    return {
-        "prediction": result
-    }
+        return {
+            "prediction": str(round(float(prediction_value), 2))
+        }
+    except Exception as e:
+        return {
+            "prediction": f"Error: {str(e)}"
+        }

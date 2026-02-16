@@ -27,17 +27,17 @@ button {
 
 <form id="form">
 
-<input name="fixed_acidity" placeholder="fixed acidity"><br>
-<input name="volatile_acidity" placeholder="volatile acidity"><br>
-<input name="citric_acid" placeholder="citric acid"><br>
-<input name="residual_sugar" placeholder="residual sugar"><br>
-<input name="chlorides" placeholder="chlorides"><br>
-<input name="free_sulfur_dioxide" placeholder="free sulfur dioxide"><br>
-<input name="total_sulfur_dioxide" placeholder="total sulfur dioxide"><br>
-<input name="density" placeholder="density"><br>
-<input name="pH" placeholder="pH"><br>
-<input name="sulphates" placeholder="sulphates"><br>
-<input name="alcohol" placeholder="alcohol"><br>
+<input type="number" step="any" name="fixed_acidity" placeholder="fixed acidity" required><br>
+<input type="number" step="any" name="volatile_acidity" placeholder="volatile acidity" required><br>
+<input type="number" step="any" name="citric_acid" placeholder="citric acid" required><br>
+<input type="number" step="any" name="residual_sugar" placeholder="residual sugar" required><br>
+<input type="number" step="any" name="chlorides" placeholder="chlorides" required><br>
+<input type="number" step="any" name="free_sulfur_dioxide" placeholder="free sulfur dioxide" required><br>
+<input type="number" step="any" name="total_sulfur_dioxide" placeholder="total sulfur dioxide" required><br>
+<input type="number" step="any" name="density" placeholder="density" required><br>
+<input type="number" step="any" name="pH" placeholder="pH" required><br>
+<input type="number" step="any" name="sulphates" placeholder="sulphates" required><br>
+<input type="number" step="any" name="alcohol" placeholder="alcohol" required><br>
 
 <button type="submit">Predict</button>
 
@@ -53,17 +53,28 @@ document.getElementById("form").onsubmit = async (e) => {
 
     const formData = new FormData(e.target)
 
-    const response = await fetch("/predict", {
+    try {
+        const response = await fetch("/predict", {
+            method: "POST",
+            body: formData
+        })
 
-        method: "POST",
-        body: formData
+        const data = await response.json()
 
-    })
-
-    const data = await response.json()
-
-    document.getElementById("result").innerHTML =
-        "Prediction: " + data.prediction
+        if (response.ok) {
+            document.getElementById("result").innerHTML =
+                "Prediction: " + data.prediction
+            document.getElementById("result").style.color = "lightgreen"
+        } else {
+            document.getElementById("result").innerHTML =
+                "Error: " + data.prediction
+            document.getElementById("result").style.color = "red"
+        }
+    } catch (error) {
+        document.getElementById("result").innerHTML =
+            "Error: " + error.message
+        document.getElementById("result").style.color = "red"
+    }
 }
 
 </script>
