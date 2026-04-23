@@ -65,7 +65,7 @@ mlflow = try_mlflow_setup(MLFLOW_URI)
 
 if mlflow:
     try:
-        with mlflow.start_run():
+        with mlflow.start_run(run_name="xgboost-run"):
             mlflow.log_params(params)
 
             model = xgb.XGBRegressor(**params)
