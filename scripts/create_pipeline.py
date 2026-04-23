@@ -1,5 +1,4 @@
 # scripts/create_pipeline.py
-
 import os
 import boto3
 import sagemaker
@@ -20,7 +19,7 @@ sess = sagemaker.Session(boto3.Session(region_name=REGION))
 
 train_s3_uri = f"s3://{BUCKET}/data/wine.csv"
 
-estimator = SKLearn(
+estimator = SKLearn(                
     entry_point="train_with_mlflow.py",
     source_dir="scripts",
     role=ROLE_ARN,

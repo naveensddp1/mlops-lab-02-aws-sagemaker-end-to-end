@@ -13,10 +13,16 @@ from sklearn.metrics import mean_squared_error, r2_score
 TRAIN_DIR = os.environ.get("SM_CHANNEL_TRAIN", "/opt/ml/input/data/train")
 MODEL_DIR = os.environ.get("SM_MODEL_DIR", "/opt/ml/model")
 
+
+print(f"Training data directory: {TRAIN_DIR}")
+print(f"Model output directory: {MODEL_DIR}")
+
 MLFLOW_URI = os.environ.get("MLFLOW_TRACKING_URI", "").rstrip("/")
 
 def get_csv_path(train_dir: str) -> str:
     csv_files = [f for f in os.listdir(train_dir) if f.endswith(".csv")]
+    print(f"Found CSV files: {csv_files}")
+    
     if not csv_files:
         raise RuntimeError(f"No CSV found in {train_dir}")
     return os.path.join(train_dir, csv_files[0])
@@ -83,6 +89,7 @@ if mlflow:
             mlflow.xgboost.log_model(model, artifact_path="model")
 
         print("[OK] Trained + logged to MLflow")
+        
     except Exception as e:
         print(f"[WARN] MLflow logging failed mid-run, continuing. Error: {e}")
 
