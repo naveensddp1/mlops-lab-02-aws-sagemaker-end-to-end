@@ -45,9 +45,11 @@ def predict(
 ):
 
     # convert to CSV format with headers
-    headers = "fixed_acidity,volatile_acidity,citric_acid,residual_sugar,chlorides,free_sulfur_dioxide,total_sulfur_dioxide,density,pH,sulphates,alcohol"
+    #headers = "fixed_acidity,volatile_acidity,citric_acid,residual_sugar,chlorides,free_sulfur_dioxide,total_sulfur_dioxide,density,pH,sulphates,alcohol"
     data = f"{fixed_acidity},{volatile_acidity},{citric_acid},{residual_sugar},{chlorides},{free_sulfur_dioxide},{total_sulfur_dioxide},{density},{pH},{sulphates},{alcohol}"
-    payload = f"{headers}\n{data}"
+    #payload = f"{headers}\n{data}"
+    payload = data
+    print(f"DEBUG: Payload has {len(payload.split(','))} columns: '{payload}'")
 
     try:
         response = runtime.invoke_endpoint(
