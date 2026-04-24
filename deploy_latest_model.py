@@ -34,6 +34,8 @@ jobs = sm.list_training_jobs(
     MaxResults=20,
 )["TrainingJobSummaries"]
 
+print(f"Found training jobs: {len(jobs)} : {[job['TrainingJobName'] for job in jobs]}")
+
 latest_job = None
 for job in jobs:
     if job["TrainingJobStatus"] == "Completed":
